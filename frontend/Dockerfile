@@ -17,13 +17,15 @@ ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
+# The standalone server binds to $HOSTNAME, which Docker sets to the container ID; listen on all
+# interfaces so the localhost health check (and Nginx) can reach it.
+ENV HOSTNAME=0.0.0.0
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3000', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
