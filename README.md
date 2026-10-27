@@ -31,8 +31,8 @@ trading signals over historical data. It is not connected to any live brokerage.
   sector watchlists, and a research notebook — ₹/INR formatting throughout, with a baseline
   accessibility pass (skip-to-content link, labeled icon-only controls, an accessible
   command-palette dialog, `prefers-reduced-motion` respected app-wide).
-- **146 backend tests**, ruff + black clean; **6 frontend unit tests** (Vitest) and **4 end-to-end
-  smoke tests** (Playwright); type-checked frontend, GitHub Actions CI, Docker Compose.
+- **191 backend tests**, ruff + black clean; **6 frontend unit tests** (Vitest) and **4 end-to-end
+  smoke tests** (Playwright); type-checked frontend, a GitHub Actions workflow, Docker Compose.
 
 See `docs/ARCHITECTURE.md` for the full design rationale — what's built, what's deliberately out
 of scope, and why.
@@ -40,7 +40,8 @@ of scope, and why.
 ## Quickstart — Docker Compose
 
 ```bash
-cp .env.example .env      # edit SECRET_KEY at minimum
+cp .env.example .env      # set a random SECRET_KEY first (e.g. openssl rand -hex 32); the
+                          # API refuses to start in production with the example value
 docker compose up --build
 ```
 
@@ -48,12 +49,14 @@ docker compose up --build
 - API: http://localhost/api/v1 (or http://localhost:8000/api/v1 directly)
 - Swagger docs: http://localhost:8000/api/v1/docs
 
-> **Note on this repository's provenance:** the Docker/Compose setup was validated with
-> `docker compose config` (correct parsing, service wiring, env resolution) in the environment
-> this project was built in, but a live `docker build` / `docker compose up` could not be run
-> there (no Docker daemon available). Run it yourself before relying on it in an interview or
-> demo — it follows standard, well-tested patterns (multi-stage builds, Next.js `standalone`
-> output, Alembic migrations on container start) but hasn't been executed end-to-end.
+> **Verification status:** a clean `docker compose up --build` was run locally with Docker
+> Desktop on fresh Postgres and Redis volumes: all services became healthy, all migrations ran,
+> register, login, CSV upload and CORS worked through Nginx, seeded backtests completed through
+> the Celery worker on PostgreSQL, and the Playwright smoke tests passed against the stack. The
+> backend suite also passes inside the image (Python 3.12). Not verified: any public deployment.
+> Compose publishes
+> Postgres, Redis and the API on host ports for convenience; remove those mappings anywhere
+> other than a local machine.
 
 ## Local development (without Docker)
 
@@ -102,7 +105,7 @@ Notes for local setups:
 Run the test suite:
 
 ```bash
-pytest                      # 146 tests, ~50s
+pytest                      # 191 tests, ~2 min
 ruff check app/             # lint
 black --check app/          # format check
 ```
@@ -166,7 +169,10 @@ QuantForge/
   raw endpoint directly. The CSV upload path is fully verified end-to-end and is the guaranteed
   data path for any environment; the Yahoo provider code is correct (including NSE/BSE `.NS`/`.BO`
   symbol resolution) and will work from a normal residential/cloud IP.
-- **Docker build**: see the Quickstart note above.
+- **Deployment hardening**: behind Nginx the API does not yet read forwarded client addresses,
+  so rate limits are shared across clients; there is no Content-Security-Policy; and several
+  dependencies (Starlette via FastAPI, Next.js 14) have published advisories that need
+  upgrades. Not production-ready until these are addressed.
 - **Intraday multi-timeframe backtesting (5m/15m/30m/1h), Futures/Options/Currency/Commodities,
   corporate actions/earnings calendar, ML models, live WebSocket prices, PDF/Excel export, market
   scanner, trade journal, pairs trading**: documented as roadmap items with concrete extension
