@@ -14,7 +14,7 @@ import pandas as pd
 from app.backtesting.engine import SimulatedTrade
 
 TRADING_DAYS_PER_YEAR = 252
-_OMEGA_CAP = 999.0  # avoids emitting a non-JSON-serializable `inf` when there are no losing days
+_OMEGA_CAP = 999.0  # avoids emitting a non-JSON-serializable `inf` when there are no losing days/trades
 
 
 @dataclass
@@ -50,6 +50,18 @@ class PerformanceMetrics:
 
 def _safe_div(numerator: float, denominator: float, default: float = 0.0) -> float:
     return numerator / denominator if denominator else default
+
+
+def _annualized_return_pct(growth: float, n_years: float) -> float:
+    """Compound annual growth for a total growth factor (final / initial value).
+
+    A growth factor at or below zero means the account lost everything or more (possible
+    for an uncapped short, as the engine models no margin call). Annualised growth is
+    undefined there, and a fractional power of a negative number is complex, so it is
+    floored at -100% (total loss). The raw loss is still reported by total return."""
+    if growth <= 0:
+        return -100.0
+    return (growth ** (1 / n_years) - 1) * 100
 
 
 def _max_drawdown_series(equity: pd.Series) -> pd.Series:
@@ -124,7 +136,7 @@ def compute_bootstrap_confidence_intervals(
         excess = returns - rf_daily
         std = excess.std(ddof=0)
         sharpe = (excess.mean() / std * np.sqrt(TRADING_DAYS_PER_YEAR)) if std > 0 else 0.0
-        cagr = (float(np.prod(1 + returns)) ** (1 / n_years) - 1) * 100 if n else 0.0
+        cagr = _annualized_return_pct(float(np.prod(1 + returns)), n_years) if n else 0.0
         return float(sharpe), float(sharpe), float(cagr), float(cagr)
 
     rng = np.random.default_rng(seed)
@@ -136,7 +148,7 @@ def compute_bootstrap_confidence_intervals(
         excess = sample - rf_daily
         std = excess.std(ddof=0)
         sharpes[i] = (excess.mean() / std * np.sqrt(TRADING_DAYS_PER_YEAR)) if std > 0 else 0.0
-        cagrs[i] = (float(np.prod(1 + sample)) ** (1 / n_years) - 1) * 100
+        cagrs[i] = _annualized_return_pct(float(np.prod(1 + sample)), n_years)
 
     tail = (1 - confidence) / 2 * 100
     return (
@@ -163,7 +175,7 @@ def compute_performance_metrics(
 
     total_return_pct = (equity_curve.iloc[-1] / equity_curve.iloc[0] - 1) * 100
     n_years = max((len(equity_curve) - 1) / TRADING_DAYS_PER_YEAR, 1e-9)
-    cagr_pct = ((equity_curve.iloc[-1] / equity_curve.iloc[0]) ** (1 / n_years) - 1) * 100
+    cagr_pct = _annualized_return_pct(float(equity_curve.iloc[-1] / equity_curve.iloc[0]), n_years)
     volatility_pct = daily_returns.std(ddof=0) * np.sqrt(TRADING_DAYS_PER_YEAR) * 100
 
     excess_returns = daily_returns - rf_daily
@@ -196,7 +208,9 @@ def compute_performance_metrics(
     win_rate_pct = _safe_div(len(winning), num_trades) * 100
     gross_profit = sum(t.pnl for t in winning)
     gross_loss = abs(sum(t.pnl for t in losing))
-    profit_factor = _safe_div(gross_profit, gross_loss, default=gross_profit if gross_profit > 0 else 0.0)
+    # No losing trades: the ratio is unbounded, so use the same cap as Omega (a ratio, never
+    # the rupee gross profit, which would scale with account size).
+    profit_factor = _safe_div(gross_profit, gross_loss, default=_OMEGA_CAP if gross_profit > 0 else 0.0)
     expectancy = _safe_div(sum(t.pnl for t in trades), num_trades)
 
     alpha, beta = 0.0, 0.0
