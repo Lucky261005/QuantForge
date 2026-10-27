@@ -1,206 +1,173 @@
 # QuantForge
 
-**Institutional Quantitative Research Platform for Indian Markets** — research, backtest, and
-evaluate systematic trading strategies on NSE/BSE equities and indices, with the risk analytics,
-portfolio tools, and Indian transaction-cost modeling a real research desk expects.
+QuantForge is a backtesting and research platform for Indian equities (NSE/BSE). You load daily
+price data, pick or configure a rule-based strategy, and get a backtest with Indian transaction
+charges applied to every trade, risk metrics with confidence intervals, and robustness checks.
 
-QuantForge is a research/signal platform, not an execution system: it produces and evaluates
-trading signals over historical data. It is not connected to any live brokerage.
+It is a student portfolio project, built as a working full-stack application. It is a research
+tool, not a trading system: it has no broker execution, no live prices, and makes no claim that
+any strategy is profitable. The demo data it ships with is synthetic and labelled as such.
 
-## What's here
+## What problem it solves
 
-- **FastAPI backend** — JWT auth (access/refresh rotation, RBAC, opt-in httpOnly refresh cookie),
-  a pluggable market-data layer (Yahoo Finance with auto NSE/BSE symbol resolution + CSV, with NSE
-  official data, Zerodha Kite Connect, Upstox, Angel One SmartAPI, Alpha Vantage, and Polygon all
-  wired behind the same interface), **17 technical indicators** (SMA/EMA/MACD/ADX/RSI/Stochastic/
-  ROC/Bollinger/ATR/VWAP/SuperTrend/Williams %R/CCI/Aroon/Parabolic SAR/OBV/MFI), **21 built-in
-  strategies** behind a plugin registry, a vectorized backtest engine (commission/slippage/
-  position-sizing/stop-loss-take-profit/shorts/multi-asset/periodic rebalancing, plus a real
-  Indian equity charge model — STT/exchange transaction charges/SEBI turnover fee/stamp duty/GST),
-  a full risk analytics suite (Sharpe/Sortino/Calmar/Omega/VaR/CVaR/Ulcer Index/alpha/beta, a
-  configurable risk-free rate, and block-bootstrap 95% confidence intervals on Sharpe/CAGR),
-  transaction-cost sensitivity analysis, walk-forward validation, a portfolio optimizer (5
-  allocation methods via `scipy.optimize`), market breadth (advance/decline, 52-week highs/lows),
-  and async backtest execution via Celery.
-- **Next.js 14 frontend** — a dark/light research UI: landing page, auth (including a working
-  password reset), a command-palette-driven dashboard (market overview for NIFTY/BANK NIFTY/SENSEX,
-  market breadth, top gainers/losers, a sector heatmap), a strategy builder with dynamic parameter
-  forms, a backtest results page with Plotly candlestick/equity/drawdown/heatmap/trade-distribution
-  charts plus walk-forward and cost-sensitivity tables, multi-backtest comparison with a
-  correlation matrix and a risk-vs-return scatter, a portfolio optimizer UI, a paper portfolio,
-  sector watchlists, and a research notebook — ₹/INR formatting throughout, with a baseline
-  accessibility pass (skip-to-content link, labeled icon-only controls, an accessible
-  command-palette dialog, `prefers-reduced-motion` respected app-wide).
-- **191 backend tests**, ruff + black clean; **6 frontend unit tests** (Vitest) and **4 end-to-end
-  smoke tests** (Playwright); type-checked frontend, a GitHub Actions workflow, Docker Compose.
+Most hobby backtesters ignore what trading in India actually costs (STT, stamp duty, exchange and
+SEBI fees, GST), fill stop-losses at prices the market never offered, and report a single Sharpe
+ratio with no sense of how uncertain it is. QuantForge models those costs per trade, fills stops
+and targets realistically when prices gap through them, and reports bootstrap confidence intervals,
+walk-forward results and cost sensitivity next to the headline numbers.
 
-See `docs/ARCHITECTURE.md` for the full design rationale — what's built, what's deliberately out
-of scope, and why.
+**Intended users:** students and individual researchers exploring systematic strategies on Indian
+markets who want results they can reason about.
 
-## Quickstart — Docker Compose
+## Features
+
+- **21 built-in strategies** (moving-average and EMA crossovers, MACD, RSI, Bollinger, Donchian,
+  SuperTrend, buy-and-hold and more) behind a plugin registry, built on **17 indicators**.
+- **Backtest engine:** signals act one bar later; stops and targets fill at the trigger level, or
+  at the open when the bar gaps through it; long and short positions; multi-asset portfolios with
+  periodic rebalancing; slippage and position sizing.
+- **Indian equity charge model:** STT, exchange transaction charges, SEBI turnover fee, stamp duty
+  and GST for delivery and intraday trades, or a simple flat commission.
+- **Risk metrics:** CAGR, volatility, Sharpe, Sortino, Calmar, Omega, max drawdown, Ulcer Index,
+  VaR/CVaR, alpha/beta against a benchmark, and block-bootstrap 95% confidence intervals for
+  Sharpe and CAGR.
+- **Robustness tools:** walk-forward validation over rolling windows, transaction-cost
+  sensitivity, side-by-side comparison of backtests with a correlation matrix, and a portfolio
+  optimizer (5 allocation methods via SciPy).
+- **Market data:** CSV upload (verified path) and Yahoo Finance with NSE/BSE symbol resolution.
+  Adapters for Kite Connect, Upstox, Angel One, NSE, Alpha Vantage and Polygon are implemented
+  but untested against the live APIs.
+- **Accounts and security:** JWT access and refresh tokens with rotation and revocation, roles,
+  per-user ownership checks on every resource, rate-limited login, single-use password-reset
+  tokens, and security headers.
+- **Frontend:** dashboard, strategy builder, backtest results with Plotly charts (equity,
+  drawdown, monthly returns, trades), comparison, optimizer, paper portfolio, watchlists and
+  research notes; INR formatting, keyboard command palette, accessibility pass.
+- **Async execution:** backtests run on a Celery worker when Redis is available, and in-process
+  when it isn't.
+
+## Architecture
+
+```
+ Browser (Next.js 14, TanStack Query, Plotly)
+        │  REST /api/v1, JWT
+        ▼
+ Nginx ──► FastAPI ── endpoints → services → repositories → SQLAlchemy models
+                │            │
+                │            ├── backtest engine (signals, fills, charges, metrics)
+                │            ├── market data providers (CSV, Yahoo, broker adapters)
+                │            └── Redis cache (in-memory fallback)
+                ▼
+        PostgreSQL (Docker) / SQLite (local)
+                ▲
+                │
+        Celery worker ◄── Redis broker (optional; falls back to in-process runs)
+```
+
+A backtest request saves a pending backtest, dispatches it to the worker, and the engine loads
+stored bars, lags the strategy's signals by one bar, simulates trades with slippage and charges,
+and stores metrics, trades and the equity curve. The frontend polls until it completes. More in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Quickstart (Docker)
+
+Requires Docker with Compose.
 
 ```bash
-cp .env.example .env      # set a random SECRET_KEY first (e.g. openssl rand -hex 32); the
-                          # API refuses to start in production with the example value
+cp .env.example .env
+# Set a random SECRET_KEY in .env, e.g. from: openssl rand -hex 32
+# (the example sets ENVIRONMENT=production, and the API refuses to start with the example key)
 docker compose up --build
 ```
 
-- Frontend: http://localhost (via Nginx) or http://localhost:3000 directly
-- API: http://localhost/api/v1 (or http://localhost:8000/api/v1 directly)
-- Swagger docs: http://localhost:8000/api/v1/docs
+Open http://localhost. This starts PostgreSQL, Redis, the API (migrations run on start), a Celery
+worker, the frontend and Nginx. Compose also publishes Postgres, Redis, the API (8000) and the
+frontend (3000) on host ports for convenience; remove those mappings anywhere but your own machine.
 
-> **Verification status:** a clean `docker compose up --build` was run locally with Docker
-> Desktop on fresh Postgres and Redis volumes: all services became healthy, all migrations ran,
-> register, login, CSV upload and CORS worked through Nginx, seeded backtests completed through
-> the Celery worker on PostgreSQL, and the Playwright smoke tests passed against the stack. The
-> backend suite also passes inside the image (Python 3.12). Not verified: any public deployment.
-> Compose publishes
-> Postgres, Redis and the API on host ports for convenience; remove those mappings anywhere
-> other than a local machine.
+To load the demo account and synthetic demo data into the running stack:
+
+```bash
+cd backend && pip install -r requirements.txt   # the seed script uses httpx
+QUANTFORGE_API_URL=http://localhost/api/v1 python ../scripts/seed_demo_data.py
+```
+
+Then sign in as `demo@quantforge.io` / `DemoPass123` (a local demo account only).
 
 ## Local development (without Docker)
 
-### Backend
+Requires Python 3.12+ and Node 20+. Redis is optional.
 
 ```bash
+# Backend (http://localhost:8000/api/v1, docs at /api/v1/docs)
 cd backend
 python -m venv .venv
-source .venv/Scripts/activate   # Windows Git Bash; use .venv/bin/activate on macOS/Linux
+source .venv/bin/activate            # Windows Git Bash: source .venv/Scripts/activate
 pip install -r requirements.txt
-cp .env.example ../.env         # or set DATABASE_URL=sqlite:///./quantforge.db directly
 alembic upgrade head
 uvicorn app.main:app --reload
-```
 
-Redis/Celery are optional in dev: if the broker at `CELERY_BROKER_URL` is unreachable,
-`dispatch_backtest` falls back to running the backtest synchronously in the request — see
-`app/tasks/backtest_tasks.py`.
+# Demo data (with the backend running)
+python ../scripts/seed_demo_data.py
 
-With the backend running, seed a demo account with 20 NSE large-caps (Reliance, TCS, HDFC Bank,
-Infosys, ...), 6 index series (NIFTY 50, BANK NIFTY, FINNIFTY, SENSEX, MIDCAP 100, NIFTY NEXT 50),
-sector watchlists, and completed backtests — useful for exploring the UI immediately, and
-sidesteps waiting on (or being rate-limited by) a live Yahoo Finance download:
-
-```bash
-python ../scripts/seed_demo_data.py   # logs in as demo@quantforge.io / DemoPass123
-```
-
-> **The seeded prices are synthetic.** They are random walks generated by the seed script, stored
-> with the `synthetic` data source, and labelled "Synthetic demo data" everywhere they appear.
-> Results built on them are illustrative only. Download or upload real data for real research.
-> A database seeded before this label existed can be relabelled with
-> `python ../scripts/relabel_synthetic_demo_data.py` (changes only the source label).
-
-Notes for local setups:
-
-- **CORS:** the API only accepts the origins in `CORS_ORIGINS` (default `http://localhost:3000`).
-  If the frontend runs on another port, add it there, e.g.
-  `CORS_ORIGINS='["http://localhost:3001"]'`.
-- **Password reset in development:** no email provider is wired up. Outside production, outgoing
-  emails (with the reset link) are written as files to `backend/dev_outbox/` (git-ignored). Set
-  `FRONTEND_URL` so the link points at your frontend.
-- **Shared market data:** normal users can add new bars but never overwrite existing ones;
-  admins can overwrite. CSV uploads are capped at 5 MB.
-
-Run the test suite:
-
-```bash
-pytest                      # 191 tests, ~2 min
-ruff check app/             # lint
-black --check app/          # format check
-```
-
-### Frontend
-
-```bash
-cd frontend
+# Frontend (http://localhost:3000)
+cd ../frontend
 npm install
-cp ../.env.example .env.local   # set NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1" > .env.local
 npm run dev
 ```
 
-```bash
-npm run type-check          # tsc --noEmit
-npm run lint                # next lint
-npm test                    # Vitest unit tests
-npm run build               # production build
-```
+Locally the backend uses SQLite (`backend/quantforge.db`) and development settings. If the
+frontend runs on a port other than 3000, add it to `CORS_ORIGINS`. Password-reset emails are
+written to `backend/dev_outbox/` instead of being sent.
 
-End-to-end smoke tests run against an already-running, seeded stack (read-only):
+## Tests
 
-```bash
-npx playwright install chromium            # once
-E2E_BASE_URL=http://localhost:3000 npm run test:e2e
-```
+| Suite | Command | Result |
+|---|---|---|
+| Backend (pytest) | `cd backend && pytest` | 191 passed, including hand-computed financial cases |
+| Lint and format | `ruff check app/` and `black --check app/` | clean |
+| Frontend | `npm run lint`, `npm run type-check`, `npm test`, `npm run build` | clean, 6 unit tests passed |
+| End-to-end (Playwright) | `E2E_BASE_URL=http://localhost:3000 npm run test:e2e` against a seeded stack | 4 passed |
+| CI | GitHub Actions: backend, frontend and Docker image builds | passing |
+
+The full Docker stack was also verified from a clean start: migrations on an empty PostgreSQL,
+health checks, sign-up, sign-in, CSV upload and CORS through Nginx, demo backtests completed by
+the Celery worker, and the Playwright tests against it.
 
 ## Project structure
 
 ```
-QuantForge/
-├── backend/            # FastAPI app — see docs/ARCHITECTURE.md §3 for the full layout
-├── frontend/            # Next.js 14 app (App Router)
-├── docker/              # nginx.conf
-├── docs/                 # architecture, ER diagram, API notes, deployment guide
-├── scripts/              # dev bootstrap helpers
-├── .github/workflows/    # CI (backend tests, frontend build, docker build check)
-└── docker-compose.yml
+backend/     FastAPI app, backtest engine, strategies, Alembic migrations, tests
+frontend/    Next.js 14 app (App Router), Vitest and Playwright tests
+docker/      Nginx config
+docs/        architecture, ER diagram, API notes, deployment notes
+scripts/     demo data seeding
 ```
 
 ## Documentation
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — design decisions, what's in/out of scope, extension seams
-- [`docs/ER_DIAGRAM.md`](docs/ER_DIAGRAM.md) — full database schema (Mermaid ER diagram)
-- [`docs/API.md`](docs/API.md) — API surface overview, auth flow, key request/response shapes
-- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — deploying to Render, Railway, or AWS
+- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md): detailed technical write-up
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): design decisions and scope
+- [docs/ER_DIAGRAM.md](docs/ER_DIAGRAM.md): database schema
+- [docs/API.md](docs/API.md): API overview and auth flow
+- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): deployment notes
 
 ## Tech stack
 
-| Layer | Choices |
-|---|---|
-| Backend | Python 3.12, FastAPI, SQLAlchemy 2.0, Pydantic v2, Alembic, Celery, Redis, pytest |
-| Database | SQLite (dev) / PostgreSQL (prod) — same models, dialect-agnostic |
-| Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS, Radix primitives, TanStack Query, Zustand, Axios, Framer Motion, Plotly.js |
-| DevOps | Docker, Docker Compose, Nginx, GitHub Actions |
+Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2, pandas, NumPy, SciPy, Celery, Redis,
+PostgreSQL / SQLite · Next.js 14, TypeScript, Tailwind CSS, TanStack Query, Zustand, Plotly ·
+pytest, Vitest, Playwright · Docker Compose, Nginx, GitHub Actions
 
-## Known limitations (documented honestly, not hidden)
+## Limitations
 
-- **Yahoo Finance in this build's environment**: the sandbox this was built in hit persistent
-  HTTP 429s from Yahoo's API (shared/datacenter IP rate limiting) — confirmed by hitting Yahoo's
-  raw endpoint directly. The CSV upload path is fully verified end-to-end and is the guaranteed
-  data path for any environment; the Yahoo provider code is correct (including NSE/BSE `.NS`/`.BO`
-  symbol resolution) and will work from a normal residential/cloud IP.
-- **Deployment hardening**: behind Nginx the API does not yet read forwarded client addresses,
-  so rate limits are shared across clients; there is no Content-Security-Policy; and several
-  dependencies (Starlette via FastAPI, Next.js 14) have published advisories that need
-  upgrades. Not production-ready until these are addressed.
-- **Intraday multi-timeframe backtesting (5m/15m/30m/1h), Futures/Options/Currency/Commodities,
-  corporate actions/earnings calendar, ML models, live WebSocket prices, PDF/Excel export, market
-  scanner, trade journal, pairs trading**: documented as roadmap items with concrete extension
-  seams in `docs/ARCHITECTURE.md` §7 — not stubbed with fake implementations.
-- **NSE official / Kite Connect / Upstox / Angel One / Alpha Vantage / Polygon providers**: real,
-  API-shape-accurate implementations behind the same `MarketDataProvider` interface as Yahoo
-  Finance, but untested against the live APIs (no broker accounts or API keys available in this
-  build). They activate automatically once their respective credentials are set — see
-  `.env.example`. Kite/Upstox/Angel One resolve NSE large-cap equity symbols directly; anything
-  beyond that (F&O, ISIN-only symbols) needs each broker's instrument-master lookup wired in
-  first (see `docs/ARCHITECTURE.md` §7).
-- **Indian equity charge model rates** (`app/backtesting/charges.py`): reflect commonly published
-  NSE/SEBI statutory rates as of this build; verify against the current NSE/SEBI circular before
-  relying on them for live capital allocation — rates change periodically by regulation.
-- **Walk-forward *validation*, not walk-forward *optimization***: `GET /backtests/{id}/walk-forward`
-  re-runs the same fixed strategy parameters across rolling out-of-sample windows to check
-  consistency across market regimes — it does not re-search parameters per window. That's a
-  meaningfully larger feature (a parameter-space search per window) and is named precisely so the
-  distinction is never implied to be more than it is.
-- **Rolling Sharpe/volatility as a time series, and a trade calendar (daily-P&L calendar heatmap)**:
-  not built as chart components this pass — the risk-vs-return scatter and trade-distribution
-  histogram were prioritized instead as the higher-signal, lower-effort additions. The backend's
-  bootstrap-CI and cost-sensitivity/walk-forward endpoints are new and already surfaced; a rolling
-  window chart is a frontend-only addition on top of data already computable from
-  `daily_returns`.
-- **Paper portfolio, not live paper trading**: the Portfolio page records manual paper buys and
-  sells at a price you enter or the latest stored close. There is no order simulation against
-  live or delayed quotes. See `docs/ARCHITECTURE.md` §7.
-- **Execution model**: signals execute at the next bar's close; stops and targets fill at the
-  trigger level, or at the open when the bar gaps through it. Short trades are modelled
-  symmetrically, without borrow fees or margin.
+- **Synthetic demo data.** The seeded prices are random walks; results on them are illustrative.
+- **Daily bars only.** No intraday backtesting, derivatives, corporate actions or live prices.
+- **Simplified execution.** Shorts carry no borrow fees or margin. Walk-forward re-tests fixed
+  parameters; it does not re-optimize them per window.
+- **Unverified data providers.** Only CSV upload and the Yahoo adapter's code path are verified;
+  Yahoo itself may rate-limit some networks.
+- **Charge rates** reflect published NSE/SEBI rates at the time of writing and change by
+  regulation.
+- **Not production-ready.** Behind Nginx, rate limits are shared across clients; there is no
+  Content-Security-Policy; and Starlette (via FastAPI) and Next.js 14 have published advisories
+  that need upgrades. It has not been deployed publicly.
