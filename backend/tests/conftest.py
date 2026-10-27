@@ -45,6 +45,12 @@ def client(tmp_path, monkeypatch):
 
     monkeypatch.setattr(settings, "DEV_OUTBOX_DIR", str(tmp_path / "outbox"))
 
+    # Run backtests in-process even when a Redis broker is reachable (CI starts one), since
+    # no Celery worker runs during tests to pick queued jobs up.
+    from app.tasks import backtest_tasks
+
+    monkeypatch.setattr(backtest_tasks, "_broker_reachable", lambda url: False)
+
     # The cache is a process-wide singleton; give every test its own empty in-memory
     # one so cached OHLCV from an earlier test's database can't leak into this one.
     from app.core import cache as cache_module
