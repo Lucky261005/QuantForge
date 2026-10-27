@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Tokens: see DESIGN.md. Light is the alternate theme; dark (graphite) is primary. */
+  :root {
+    /* "Ledger" palette (light, primary): cool paper ground, green-black ink, petrol accent. */
+    --background: 90 9% 95%;
+    --foreground: 160 18% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 160 18% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 18% 9%;
+    --primary: 186 83% 26%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 100 7% 90%;
+    --secondary-foreground: 160 18% 9%;
+    --muted: 100 7% 90%;
+    --muted-foreground: 150 5% 36%;
+    --accent: 100 7% 91%;
+    --accent-foreground: 160 18% 9%;
+    --destructive: 2 64% 44%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 145 63% 27%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 30%;
+    --border: 160 18% 9% / 0.12;
+    --input: 160 18% 9% / 0.18;
+    --ring: 186 83% 30%;
+    --chart-1: 186 83% 30%;
+    --chart-2: 28 80% 45%;
+    --chart-3: 145 63% 27%;
+    --chart-4: 150 5% 50%;
+    --chart-5: 2 64% 44%;
+    --radius: 0.5rem;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+
+  .dark {
+    /* Ledger palette (dark): petrol-black ground, soft paper ink, bright petrol accent. */
+    --background: 195 22% 7%;
+    --foreground: 150 10% 91%;
+    --card: 195 18% 10%;
+    --card-foreground: 150 10% 91%;
+    --popover: 195 18% 10%;
+    --popover-foreground: 150 10% 91%;
+    --primary: 184 55% 52%;
+    --primary-foreground: 195 22% 7%;
+    --secondary: 195 14% 15%;
+    --secondary-foreground: 150 10% 91%;
+    --muted: 195 14% 15%;
+    --muted-foreground: 170 6% 62%;
+    --accent: 195 14% 14%;
+    --accent-foreground: 150 10% 91%;
+    --destructive: 4 80% 64%;
+    --destructive-foreground: 195 22% 7%;
+    --success: 145 50% 52%;
+    --success-foreground: 195 22% 7%;
+    --warning: 38 92% 62%;
+    --border: 150 10% 91% / 0.12;
+    --input: 150 10% 91% / 0.16;
+    --ring: 184 55% 52%;
+    --chart-1: 184 55% 52%;
+    --chart-2: 30 85% 58%;
+    --chart-3: 145 50% 52%;
+    --chart-4: 170 6% 62%;
+    --chart-5: 4 80% 64%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-variation-settings: "wdth" 100;
+  }
+  ::selection {
+    @apply bg-primary text-primary-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Legacy names kept so app pages re-skin without edits: panels are flat tickets now. */
+  .glass {
+    @apply bg-card border border-border;
+  }
+
+  .glass-strong {
+    @apply bg-card border border-border;
+  }
+
+  .gradient-text {
+    @apply text-primary;
+  }
+
+  .num {
+    font-family: var(--font-geist-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .display {
+    font-variation-settings: "wdth" 100;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .card-shadow {
+    box-shadow: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/20 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/40;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(105%);
+  }
+}
+
+@keyframes tape {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-state] {
+    --tw-enter-scale: 1;
+    --tw-exit-scale: 1;
+    --tw-enter-translate-x: 0;
+    --tw-enter-translate-y: 0;
+    --tw-exit-translate-x: 0;
+    --tw-exit-translate-y: 0;
+  }
+  * {
+    transition-property: color, background-color, border-color, opacity !important;
+  }
+}
+
+/* Hero market chart: fades in once, then the candle tape scrolls left at constant speed (linear). */
+.qf-chart {
+  animation: qf-enter 700ms var(--ease) both;
+  /* soft edges so candles slide in and out instead of being cut */
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.qf-tape {
+  animation: qf-scroll 40s linear infinite;
+}
+@keyframes qf-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes qf-scroll {
+  to {
+    transform: translateX(-720px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qf-chart,
+  .qf-tape {
+    animation: none;
+  }
+}

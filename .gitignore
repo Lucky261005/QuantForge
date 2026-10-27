@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+*.db
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+.turbo/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test / coverage reports
+coverage.xml
+
+# Local tooling
+.claude/
+
+# Dev email outbox (may hold live reset links)
+backend/dev_outbox/
