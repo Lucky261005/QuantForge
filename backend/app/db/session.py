@@ -2,6 +2,8 @@
 
 from collections.abc import Generator
 
+import numpy as np
+from psycopg2.extensions import adapt, register_adapter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -28,6 +30,11 @@ engine = create_engine(
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# psycopg2 renders floats with repr(), which NumPy 2 turns into "np.float64(1.0)", invalid SQL.
+# Engine and metric outputs are numpy scalars, so adapt them as plain Python numbers.
+register_adapter(np.floating, lambda v: adapt(float(v)))
+register_adapter(np.integer, lambda v: adapt(int(v)))
 
 
 def get_db() -> Generator[Session, None, None]:
