@@ -57,6 +57,15 @@ def create_app() -> FastAPI:
             content={"title": exc.title, "detail": exc.detail, "status": exc.status_code},
         )
 
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        # JSON API: never sniffed as another type, never framed, never leaks the referrer.
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        return response
+
     app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
     return app

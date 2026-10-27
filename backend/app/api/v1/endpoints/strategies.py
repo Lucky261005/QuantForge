@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import CurrentUser, DbSession, PageNumber, PageSize
 from app.core.config import settings
 from app.schemas.common import Message, Page
 from app.schemas.strategy import StrategyCatalogEntry, StrategyCreate, StrategyRead, StrategyUpdate
@@ -36,7 +36,9 @@ def create_strategy(request: Request, payload: StrategyCreate, user: CurrentUser
 
 
 @router.get("", response_model=Page[StrategyRead])
-def list_strategies(user: CurrentUser, db: DbSession, page: int = 1, page_size: int = 20) -> Page[StrategyRead]:
+def list_strategies(
+    user: CurrentUser, db: DbSession, page: PageNumber = 1, page_size: PageSize = 20
+) -> Page[StrategyRead]:
     service = StrategyService(db)
     items, total = service.list_for_owner(user.id, (page - 1) * page_size, page_size)
     return Page.create([StrategyRead.model_validate(s) for s in items], total, page, page_size)

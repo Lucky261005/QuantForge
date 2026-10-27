@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import CurrentUser, DbSession, PageNumber, PageSize
 from app.schemas.common import Message, Page
 from app.schemas.research_note import ResearchNoteCreate, ResearchNoteRead, ResearchNoteUpdate
 from app.services.notes_service import NotesService
@@ -15,7 +15,9 @@ def create_note(payload: ResearchNoteCreate, user: CurrentUser, db: DbSession) -
 
 
 @router.get("", response_model=Page[ResearchNoteRead])
-def list_notes(user: CurrentUser, db: DbSession, page: int = 1, page_size: int = 20) -> Page[ResearchNoteRead]:
+def list_notes(
+    user: CurrentUser, db: DbSession, page: PageNumber = 1, page_size: PageSize = 20
+) -> Page[ResearchNoteRead]:
     service = NotesService(db)
     items, total = service.list_for_owner(user.id, (page - 1) * page_size, page_size)
     return Page.create([ResearchNoteRead.model_validate(n) for n in items], total, page, page_size)

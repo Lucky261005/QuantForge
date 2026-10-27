@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import CurrentUser, DbSession, PageNumber, PageSize
 from app.core.config import settings
 from app.schemas.common import Page
 from app.schemas.portfolio import PortfolioRead, TransactionCreate, TransactionRead
@@ -51,7 +51,9 @@ def create_transaction(request: Request, payload: TransactionCreate, user: Curre
 
 
 @router.get("/transactions", response_model=Page[TransactionRead])
-def list_transactions(user: CurrentUser, db: DbSession, page: int = 1, page_size: int = 20) -> Page[TransactionRead]:
+def list_transactions(
+    user: CurrentUser, db: DbSession, page: PageNumber = 1, page_size: PageSize = 20
+) -> Page[TransactionRead]:
     service = PortfolioService(db)
     items, total = service.list_transactions(user.id, (page - 1) * page_size, page_size)
     return Page.create([TransactionRead.model_validate(t) for t in items], total, page, page_size)

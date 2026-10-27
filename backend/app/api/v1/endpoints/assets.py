@@ -1,10 +1,11 @@
 from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import CurrentUser, DbSession, PageNumber, PageSize
 from app.core.config import settings
 from app.models.asset import AssetType
 from app.models.user import UserRole
@@ -24,7 +25,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("", response_model=Page[AssetRead])
-def list_assets(user: CurrentUser, db: DbSession, page: int = 1, page_size: int = 20) -> Page[AssetRead]:
+def list_assets(user: CurrentUser, db: DbSession, page: PageNumber = 1, page_size: PageSize = 20) -> Page[AssetRead]:
     service = MarketDataService(db)
     items, total = service.list_assets(offset=(page - 1) * page_size, limit=page_size)
     ids = [a.id for a in items]
@@ -67,7 +68,7 @@ def upload_csv(
     request: Request,
     user: CurrentUser,
     db: DbSession,
-    symbol: str,
+    symbol: Annotated[str, Query(min_length=1, max_length=20)],
     asset_type: AssetType = AssetType.EQUITY,
     exchange: str | None = None,
     sector: str | None = None,

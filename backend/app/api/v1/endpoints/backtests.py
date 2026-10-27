@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import CurrentUser, DbSession, PageNumber, PageSize
 from app.core.config import settings
 from app.models.backtest import BacktestStatus
 from app.repositories.backtest import TradeRepository
@@ -43,7 +43,9 @@ def create_backtest(request: Request, payload: BacktestCreate, user: CurrentUser
 
 
 @router.get("", response_model=Page[BacktestRead])
-def list_backtests(user: CurrentUser, db: DbSession, page: int = 1, page_size: int = 20) -> Page[BacktestRead]:
+def list_backtests(
+    user: CurrentUser, db: DbSession, page: PageNumber = 1, page_size: PageSize = 20
+) -> Page[BacktestRead]:
     service = BacktestService(db)
     items, total = service.list_for_owner(user.id, (page - 1) * page_size, page_size)
     return Page.create([BacktestRead.model_validate(b) for b in items], total, page, page_size)

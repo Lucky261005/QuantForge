@@ -3,7 +3,7 @@
 from collections.abc import Generator
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Query
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -58,3 +58,8 @@ def require_admin(user: CurrentUser) -> User:
 
 
 AdminUser = Annotated[User, Depends(require_admin)]
+
+# Bounded pagination: page_size=0 used to crash list endpoints, and negative or huge sizes
+# returned every row. 200 is the largest page the frontend requests.
+PageNumber = Annotated[int, Query(ge=1)]
+PageSize = Annotated[int, Query(ge=1, le=200)]

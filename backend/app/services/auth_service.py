@@ -48,7 +48,7 @@ class AuthService:
         user = self.users.create(user)
         self.users.commit()
         self.audit.record(user_id=user.id, action="user.register", resource_type="user", resource_id=user.id)
-        logger.info("user_registered", user_id=user.id, email=user.email)
+        logger.info("user_registered", user_id=user.id)
         return user
 
     def authenticate(self, email: str, password: str) -> User:
