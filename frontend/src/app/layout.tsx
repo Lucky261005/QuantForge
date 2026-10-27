@@ -19,7 +19,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "QuantForge — Institutional Quantitative Research Platform",
+  title: "QuantForge: backtest Indian equity strategies",
   description:
     "Research, backtest, and analyze systematic trading strategies with institutional-grade analytics.",
   // shortcut: localhost until a production domain exists; set NEXT_PUBLIC_SITE_URL when deploying

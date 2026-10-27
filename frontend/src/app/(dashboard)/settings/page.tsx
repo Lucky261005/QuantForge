@@ -49,8 +49,8 @@ function ProfileTab() {
       <CardContent>
         <form onSubmit={handleSubmit} className="max-w-md space-y-4">
           <div className="space-y-2">
-            <Label>Email</Label>
-            <Input value={user?.email ?? ""} disabled />
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" value={user?.email ?? ""} disabled />
           </div>
           <div className="space-y-2">
             <Label htmlFor="full-name">Full name</Label>

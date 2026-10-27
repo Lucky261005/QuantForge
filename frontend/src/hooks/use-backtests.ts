@@ -18,12 +18,14 @@ export function useBacktest(id: number) {
   return useQuery({ queryKey: ["backtests", id], queryFn: () => backtestsApi.get(id) });
 }
 
-/** Polls every 1.5s while the backtest is pending/running, stops once terminal. */
+/** Polls every 1.5s while the backtest is pending/running, stops once terminal or once the
+ * request itself fails (the page then shows the error with a retry, not an endless spinner). */
 export function useBacktestStatus(id: number) {
   return useQuery({
     queryKey: ["backtests", id, "status"],
     queryFn: () => backtestsApi.status(id),
     refetchInterval: (query) => {
+      if (query.state.status === "error") return false;
       const status = query.state.data?.status;
       return status === "completed" || status === "failed" ? false : 1500;
     },

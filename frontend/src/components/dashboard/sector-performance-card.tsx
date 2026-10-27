@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMarketMovers } from "@/hooks/use-market-overview";
 import { DIVERGING, useChartMode } from "@/lib/chart-theme";
-import { cn, formatDate, formatPercent } from "@/lib/utils";
+import { formatDate, formatPercent } from "@/lib/utils";
 
 function hexToRgba(hex: string, alpha: number): string {
   const value = hex.replace("#", "");
@@ -42,7 +42,7 @@ export function SectorPerformanceCard() {
               // Background alpha (not element opacity, which would also fade the
               // text) scales with magnitude relative to the day's biggest mover —
               // the strongest sector reads as the most saturated tile.
-              const intensity = 0.14 + 0.5 * Math.min(1, Math.abs(s.avgChangePct) / maxAbs);
+              const intensity = 0.12 + 0.33 * Math.min(1, Math.abs(s.avgChangePct) / maxAbs);
               const background = hexToRgba(up ? diverging.positive : diverging.negative, intensity);
               return (
                 <div
@@ -50,12 +50,9 @@ export function SectorPerformanceCard() {
                   className="flex flex-col justify-between rounded-lg border border-border p-3"
                   style={{ backgroundColor: background }}
                 >
-                  <span className="truncate text-xs font-medium text-foreground/80">{s.sector}</span>
+                  <span className="truncate text-xs font-medium text-foreground">{s.sector}</span>
                   <span
-                    className={cn(
-                      "mt-2 text-lg font-semibold tabular-nums",
-                      up ? "text-success" : "text-destructive",
-                    )}
+                    className="num mt-2 text-lg font-semibold text-foreground"
                   >
                     {formatPercent(s.avgChangePct)}
                   </span>

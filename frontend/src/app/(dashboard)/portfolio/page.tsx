@@ -1,5 +1,6 @@
 "use client";
 
+import { QueryError } from "@/components/query-error";
 import { Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -104,7 +105,7 @@ function TransactionForm({ symbols }: { symbols: string[] }) {
 }
 
 export default function PortfolioPage() {
-  const { data: portfolio, isLoading } = usePortfolio();
+  const { data: portfolio, isLoading, isError, error, refetch } = usePortfolio();
   const { data: assetsPage } = useAssets(1, 200);
   const [page, setPage] = useState(1);
   const { data: history } = usePortfolioTransactions(page, 10);
@@ -115,6 +116,10 @@ export default function PortfolioPage() {
   );
   const symbols = (assetsPage?.items ?? []).filter((a) => a.latest_bar_date).map((a) => a.symbol).sort();
   const invested = (portfolio?.holdings ?? []).reduce((sum, h) => sum + h.quantity * h.avg_price, 0);
+
+  if (isError) {
+    return <QueryError error={error} onRetry={() => refetch()} what="your portfolio" />;
+  }
 
   return (
     <div className="space-y-6">
@@ -155,7 +160,7 @@ export default function PortfolioPage() {
           {!portfolio || portfolio.holdings.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">No holdings yet. Record a buy above.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Holdings table">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
@@ -192,7 +197,7 @@ export default function PortfolioPage() {
             <p className="py-6 text-center text-sm text-muted-foreground">No transactions yet.</p>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Transaction history table">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-left text-xs text-muted-foreground">
@@ -207,7 +212,7 @@ export default function PortfolioPage() {
                   <tbody>
                     {history.items.map((t) => (
                       <tr key={t.id} className="border-b border-border">
-                        <td className="py-2 pr-4 text-muted-foreground">{formatDate(t.timestamp)}</td>
+                        <td className="whitespace-nowrap py-2 pr-4 text-muted-foreground">{formatDate(t.timestamp)}</td>
                         <td className="py-2 pr-4">{TYPE_LABELS[t.type]}</td>
                         <td className="py-2 pr-4">{t.asset_id ? symbolById.get(t.asset_id) ?? `Asset ${t.asset_id}` : "-"}</td>
                         <td className="num py-2 pr-4 text-right">{t.asset_id ? t.quantity : "-"}</td>

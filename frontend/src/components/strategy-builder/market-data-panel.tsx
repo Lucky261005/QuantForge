@@ -42,7 +42,7 @@ export function MarketDataPanel() {
         <CardTitle>Market data</CardTitle>
         <CardDescription>
           Download from Yahoo Finance (auto-resolves NSE symbols, e.g. RELIANCE → RELIANCE.NS) or upload a CSV before
-          backtesting a symbol — bars are cached and deduplicated.
+          backtesting a symbol. Bars are cached and deduplicated.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 sm:grid-cols-2">
@@ -50,13 +50,26 @@ export function MarketDataPanel() {
           <p className="text-xs font-medium text-muted-foreground">Download</p>
           <div className="grid grid-cols-3 gap-2">
             <Input
+              aria-label="Symbol to download"
               placeholder="RELIANCE"
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
               className="col-span-1"
             />
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="col-span-1" />
-            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="col-span-1" />
+            <Input
+              type="date"
+              aria-label="Download from date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="col-span-1"
+            />
+            <Input
+              type="date"
+              aria-label="Download to date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="col-span-1"
+            />
           </div>
           <Button type="submit" variant="outline" size="sm" disabled={download.isPending} className="w-full">
             <Download className="h-3.5 w-3.5" /> Download

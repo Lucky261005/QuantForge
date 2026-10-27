@@ -36,7 +36,7 @@ export default function AnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <GitCompare className="h-4 w-4" /> Compare Backtests
+            <GitCompare className="h-4 w-4" /> Compare backtests
           </CardTitle>
           <CardDescription>Select at least two completed backtests to overlay and rank.</CardDescription>
         </CardHeader>

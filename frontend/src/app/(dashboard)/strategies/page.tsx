@@ -1,5 +1,6 @@
 "use client";
 
+import { QueryError } from "@/components/query-error";
 import { FlaskConical, Plus } from "lucide-react";
 
 import { MarketDataPanel } from "@/components/strategy-builder/market-data-panel";
@@ -11,7 +12,7 @@ import { useStrategies, useStrategyCatalog } from "@/hooks/use-strategies";
 
 export default function StrategiesPage() {
   const { data: catalog } = useStrategyCatalog();
-  const { data: strategies, isLoading } = useStrategies(1, 50);
+  const { data: strategies, isLoading, isError, error, refetch } = useStrategies(1, 50);
 
   return (
     <div className="space-y-6">
@@ -19,7 +20,7 @@ export default function StrategiesPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Your Strategies</h2>
+          <h2 className="text-lg font-semibold">Your strategies</h2>
           <p className="text-sm text-muted-foreground">Saved, parameterized strategies ready to backtest.</p>
         </div>
         {catalog && (
@@ -40,10 +41,12 @@ export default function StrategiesPage() {
             <Skeleton key={i} className="h-56 w-full rounded-2xl" />
           ))}
         </div>
+      ) : isError ? (
+        <QueryError error={error} onRetry={() => refetch()} what="your strategies" />
       ) : !strategies || strategies.items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
           <FlaskConical className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No strategies yet — create your first one above.</p>
+          <p className="text-sm text-muted-foreground">No strategies yet. Create your first one above.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

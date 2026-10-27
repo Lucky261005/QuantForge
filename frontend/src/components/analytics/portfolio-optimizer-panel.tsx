@@ -47,30 +47,30 @@ export function PortfolioOptimizerPanel() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sliders className="h-4 w-4" /> Portfolio Optimizer
+          <Sliders className="h-4 w-4" /> Portfolio optimizer
         </CardTitle>
         <CardDescription>
-          Solve for allocation weights across a symbol universe — data must already be downloaded for each symbol.
+          Solve for allocation weights across a set of symbols. Each symbol needs downloaded data first.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-1.5 lg:col-span-2">
-            <Label className="text-xs">Symbols (comma-separated)</Label>
-            <Input value={symbols} onChange={(e) => setSymbols(e.target.value)} />
+            <Label htmlFor="opt-symbols" className="text-xs">Symbols (comma-separated)</Label>
+            <Input id="opt-symbols" value={symbols} onChange={(e) => setSymbols(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Start date</Label>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <Label htmlFor="opt-start" className="text-xs">Start date</Label>
+            <Input id="opt-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">End date</Label>
-            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <Label htmlFor="opt-end" className="text-xs">End date</Label>
+            <Input id="opt-end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Method</Label>
+            <Label htmlFor="opt-method" className="text-xs">Method</Label>
             <Select value={method} onValueChange={(v) => setMethod(v as OptimizationMethod)}>
-              <SelectTrigger>
+              <SelectTrigger id="opt-method">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

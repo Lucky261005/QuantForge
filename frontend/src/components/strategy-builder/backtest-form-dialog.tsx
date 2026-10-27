@@ -20,8 +20,8 @@ import type { Strategy } from "@/types/api";
 
 const CHARGE_MODELS = [
   { value: "flat", label: "Flat commission (custom %)" },
-  { value: "indian_equity_delivery", label: "Indian equity — delivery (STT/exchange/SEBI/stamp duty + GST)" },
-  { value: "indian_equity_intraday", label: "Indian equity — intraday (STT/exchange/SEBI/stamp duty + GST)" },
+  { value: "indian_equity_delivery", label: "Indian equity, delivery (STT, exchange, SEBI, stamp duty + GST)" },
+  { value: "indian_equity_intraday", label: "Indian equity, intraday (STT, exchange, SEBI, stamp duty + GST)" },
 ];
 
 function defaultStartDate() {
@@ -59,7 +59,7 @@ export function BacktestFormDialog({ strategy, trigger }: { strategy: Strategy; 
 
     createBacktest.mutate({
       strategy_id: strategy.id,
-      name: `${strategy.name} — ${symbolList.join(", ")}`,
+      name: `${strategy.name} - ${symbolList.join(", ")}`,
       symbols: symbolList,
       start_date: startDate,
       end_date: endDate,
@@ -80,7 +80,7 @@ export function BacktestFormDialog({ strategy, trigger }: { strategy: Strategy; 
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Run Backtest — {strategy.name}</DialogTitle>
+          <DialogTitle>Run backtest: {strategy.name}</DialogTitle>
           <DialogDescription>
             Data must already be downloaded/uploaded for each symbol before running.
           </DialogDescription>
@@ -186,7 +186,7 @@ export function BacktestFormDialog({ strategy, trigger }: { strategy: Strategy; 
             {chargeModel !== "flat" && (
               <div className="space-y-2 pt-1">
                 <Label htmlFor="brokerage" className="text-xs">
-                  Brokerage (%) — statutory STT/exchange/SEBI/stamp duty/GST charges are computed automatically
+                  Brokerage (%). Statutory STT, exchange, SEBI, stamp duty and GST charges are added automatically
                 </Label>
                 <Input
                   id="brokerage"

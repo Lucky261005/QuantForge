@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { BacktestStatusBadge } from "@/components/backtest-status-badge";
+import { QueryError } from "@/components/query-error";
 import { CandlestickChart } from "@/components/charts/candlestick-chart";
 import { EquityDrawdownChart } from "@/components/charts/equity-drawdown-chart";
 import { MetricsGrid } from "@/components/charts/metrics-grid";
@@ -36,8 +37,8 @@ export default function BacktestDetailPage() {
   const id = Number(params.id);
   const router = useRouter();
 
-  const { data: backtest } = useBacktest(id);
-  const { data: status } = useBacktestStatus(id);
+  const { data: backtest, isError: backtestFailed, error: backtestError } = useBacktest(id);
+  const { data: status, isError: statusFailed, error: statusError, refetch: refetchStatus } = useBacktestStatus(id);
   const isCompleted = status?.status === "completed";
   const isFailed = status?.status === "failed";
 
@@ -71,6 +72,7 @@ export default function BacktestDetailPage() {
   }, [benchmarkData, backtest]);
 
   function handleDelete() {
+    if (!confirm("Delete this backtest and its results? This can't be undone.")) return;
     deleteBacktest.mutate(id, { onSuccess: () => router.push("/backtests") });
   }
 
@@ -84,7 +86,7 @@ export default function BacktestDetailPage() {
             </Link>
           </Button>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-[-0.01em]">{backtest?.name ?? `Backtest #${id}`}</h1>
+            <h2 className="text-xl font-semibold tracking-[-0.01em]">{backtest?.name ?? `Backtest #${id}`}</h2>
             {backtest && <SyntheticDataBadge symbols={backtest.symbols} />}
           </div>
           {backtest && (
@@ -102,7 +104,15 @@ export default function BacktestDetailPage() {
         </div>
       </div>
 
-      {!isCompleted && !isFailed && (
+      {(statusFailed || backtestFailed) && (
+        <Card>
+          <CardContent>
+            <QueryError error={statusError ?? backtestError} onRetry={() => refetchStatus()} what="this backtest" />
+          </CardContent>
+        </Card>
+      )}
+
+      {!isCompleted && !isFailed && !statusFailed && !backtestFailed && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />

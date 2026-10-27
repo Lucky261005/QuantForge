@@ -38,7 +38,7 @@ export default function RegisterPage() {
   return (
     <div>
       <h1 className="display text-3xl">Create your account</h1>
-      <p className="mt-4 text-sm text-muted-foreground">Start researching strategies in minutes — free.</p>
+      <p className="mt-4 text-sm text-muted-foreground">Start researching strategies in minutes. It&apos;s free.</p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit((values) => registerUser.mutate(values))}>
         <div className="space-y-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import { QueryError } from "@/components/query-error";
 import { Plus, Star, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
@@ -37,8 +38,13 @@ function AddSymbolForm({ watchlistId }: { watchlistId: number }) {
         addItem.mutate({ watchlistId, symbol: symbol.trim().toUpperCase() }, { onSuccess: () => setSymbol("") });
       }}
     >
-      <Input placeholder="Add symbol (e.g. TSLA)" value={symbol} onChange={(e) => setSymbol(e.target.value)} />
-      <Button type="submit" size="icon" variant="outline" disabled={addItem.isPending}>
+      <Input
+        placeholder="Add symbol (e.g. RELIANCE)"
+        aria-label="Symbol to add"
+        value={symbol}
+        onChange={(e) => setSymbol(e.target.value)}
+      />
+      <Button type="submit" size="icon" variant="outline" disabled={addItem.isPending} aria-label="Add symbol">
         <Plus className="h-4 w-4" />
       </Button>
     </form>
@@ -73,7 +79,7 @@ function NewWatchlistDialog() {
             });
           }}
         >
-          <Input placeholder="e.g. Tech Leaders" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          <Input placeholder="e.g. Banking leaders" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
           <DialogFooter className="mt-4">
             <Button type="submit" variant="gradient" disabled={createWatchlist.isPending}>
               Create
@@ -86,7 +92,7 @@ function NewWatchlistDialog() {
 }
 
 export default function WatchlistPage() {
-  const { data: watchlists, isLoading } = useWatchlists();
+  const { data: watchlists, isLoading, isError, error, refetch } = useWatchlists();
   const removeItem = useRemoveWatchlistItem();
   const deleteWatchlist = useDeleteWatchlist();
 
@@ -106,10 +112,12 @@ export default function WatchlistPage() {
             <Skeleton key={i} className="h-64 w-full rounded-2xl" />
           ))}
         </div>
+      ) : isError ? (
+        <QueryError error={error} onRetry={() => refetch()} what="your watchlists" />
       ) : !watchlists || watchlists.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
           <Star className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No watchlists yet — create your first one above.</p>
+          <p className="text-sm text-muted-foreground">No watchlists yet. Create your first one above.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -121,7 +129,11 @@ export default function WatchlistPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={() => deleteWatchlist.mutate(watchlist.id)}
+                  aria-label={`Delete watchlist ${watchlist.name}`}
+                  onClick={() => {
+                    if (confirm(`Delete the watchlist "${watchlist.name}"? This can't be undone.`))
+                      deleteWatchlist.mutate(watchlist.id);
+                  }}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -146,6 +158,7 @@ export default function WatchlistPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7"
+                          aria-label={`Remove ${item.asset.symbol} from ${watchlist.name}`}
                           onClick={() => removeItem.mutate({ watchlistId: watchlist.id, itemId: item.id })}
                         >
                           <X className="h-3.5 w-3.5" />

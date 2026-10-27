@@ -1,5 +1,6 @@
 "use client";
 
+import { QueryError } from "@/components/query-error";
 import { NotebookPen, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -92,7 +93,7 @@ function NewNoteDialog() {
 }
 
 export default function NotesPage() {
-  const { data, isLoading } = useNotes(1, 50);
+  const { data, isLoading, isError, error, refetch } = useNotes(1, 50);
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -102,7 +103,7 @@ export default function NotesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Research Notes</h2>
+          <h2 className="text-lg font-semibold">Research notes</h2>
           <p className="text-sm text-muted-foreground">
             Annotate experiments, compare strategies, and write up findings.
           </p>
@@ -116,10 +117,12 @@ export default function NotesPage() {
             <Skeleton key={i} className="h-48 w-full rounded-2xl" />
           ))}
         </div>
+      ) : isError ? (
+        <QueryError error={error} onRetry={() => refetch()} what="your notes" />
       ) : !data || data.items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
           <NotebookPen className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No notes yet — capture your first research observation.</p>
+          <p className="text-sm text-muted-foreground">No notes yet. Capture your first research observation.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -134,7 +137,10 @@ export default function NotesPage() {
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => deleteNote.mutate(note.id)}
+                  aria-label={`Delete note ${note.title}`}
+                  onClick={() => {
+                    if (confirm(`Delete the note "${note.title}"? This can't be undone.`)) deleteNote.mutate(note.id);
+                  }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

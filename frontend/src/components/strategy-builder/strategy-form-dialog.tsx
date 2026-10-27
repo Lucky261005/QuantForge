@@ -64,7 +64,7 @@ export function StrategyFormDialog({ catalog, trigger, defaultOpen }: StrategyFo
         <DialogHeader>
           <DialogTitle>New Strategy</DialogTitle>
           <DialogDescription>
-            Pick a strategy type and tune its parameters — this becomes reusable across backtests.
+            Pick a strategy type and tune its parameters. You can reuse it across backtests.
           </DialogDescription>
         </DialogHeader>
 
@@ -92,7 +92,7 @@ export function StrategyFormDialog({ catalog, trigger, defaultOpen }: StrategyFo
               id="strategy-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Fast MA Cross — Tech"
+              placeholder="e.g. Fast MA cross, IT"
               required
             />
           </div>

@@ -40,7 +40,7 @@ export default function LoginPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            <Link href="/forgot-password" className="text-xs text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">
+            <Link href="/forgot-password" className="inline-block py-1 text-xs text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">
               Forgot password?
             </Link>
           </div>

@@ -18,7 +18,7 @@ export function KpiCard({ label, value, loading, trend = "neutral", subtext, hre
     <div className="px-5 py-4">
       <dt className="text-xs text-muted-foreground">
         {href ? (
-          <Link href={href} className="underline decoration-muted-foreground/40 underline-offset-4 hover:text-foreground">
+          <Link href={href} className="inline-block py-1 underline decoration-muted-foreground/40 underline-offset-4 hover:text-foreground">
             {label}
           </Link>
         ) : (

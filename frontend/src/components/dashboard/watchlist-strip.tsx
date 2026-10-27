@@ -15,7 +15,7 @@ export function WatchlistStrip() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle>{watchlists?.[0]?.name ?? "Watchlist"}</CardTitle>
-        <Link href="/watchlist" className="text-xs text-primary hover:underline">
+        <Link href="/watchlist" className="inline-block py-1 text-xs text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary">
           Manage
         </Link>
       </CardHeader>
@@ -29,7 +29,7 @@ export function WatchlistStrip() {
         ) : items.length === 0 ? (
           <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
             <Star className="h-4 w-4" />
-            No symbols yet — add some from the Watchlist page.
+            No symbols yet. Add some from the Watchlist page.
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">

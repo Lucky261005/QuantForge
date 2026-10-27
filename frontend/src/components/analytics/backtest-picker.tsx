@@ -1,6 +1,7 @@
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { QueryError } from "@/components/query-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBacktests } from "@/hooks/use-backtests";
 
@@ -10,7 +11,7 @@ interface BacktestPickerProps {
 }
 
 export function BacktestPicker({ selected, onChange }: BacktestPickerProps) {
-  const { data, isLoading } = useBacktests(1, 50);
+  const { data, isLoading, isError, error, refetch } = useBacktests(1, 50);
   const completed = data?.items.filter((b) => b.status === "completed") ?? [];
 
   function toggle(id: number) {
@@ -18,9 +19,10 @@ export function BacktestPicker({ selected, onChange }: BacktestPickerProps) {
   }
 
   if (isLoading) return <Skeleton className="h-32 w-full" />;
+  if (isError) return <QueryError error={error} onRetry={() => refetch()} what="your backtests" />;
 
   if (completed.length === 0) {
-    return <p className="text-sm text-muted-foreground">No completed backtests yet — run one from Strategy Builder.</p>;
+    return <p className="text-sm text-muted-foreground">No completed backtests yet. Run one from the Strategy builder.</p>;
   }
 
   return (

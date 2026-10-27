@@ -1,5 +1,6 @@
 "use client";
 
+import { QueryError } from "@/components/query-error";
 import { ArrowRight, Inbox } from "lucide-react";
 import Link from "next/link";
 
@@ -11,7 +12,7 @@ import { useBacktests } from "@/hooks/use-backtests";
 import { formatDate } from "@/lib/utils";
 
 export function RecentBacktestsTable() {
-  const { data, isLoading } = useBacktests(1, 5);
+  const { data, isLoading, isError, error, refetch } = useBacktests(1, 5);
 
   return (
     <Card>
@@ -30,6 +31,8 @@ export function RecentBacktestsTable() {
               <Skeleton key={i} className="h-14 w-full" />
             ))}
           </div>
+        ) : isError ? (
+          <QueryError error={error} onRetry={() => refetch()} what="recent backtests" />
         ) : !data || data.items.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
             <Inbox className="h-8 w-8 text-muted-foreground" />
@@ -47,7 +50,9 @@ export function RecentBacktestsTable() {
                   <th className="pb-2 font-medium">Symbols</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Created</th>
-                  <th className="pb-2" />
+                  <th className="relative pb-2">
+                    <span className="sr-only">Open</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>

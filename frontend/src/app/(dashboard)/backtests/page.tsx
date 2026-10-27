@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { BacktestStatusBadge } from "@/components/backtest-status-badge";
+import { QueryError } from "@/components/query-error";
 import { SyntheticDataBadge } from "@/components/synthetic-data-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +16,7 @@ import { formatDate } from "@/lib/utils";
 
 export default function BacktestsPage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useBacktests(page, 20);
+  const { data, isLoading, isError, error, refetch } = useBacktests(page, 20);
   const [selected, setSelected] = useState<number[]>([]);
 
   function toggle(id: number) {
@@ -44,6 +45,8 @@ export default function BacktestsPage() {
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
+          ) : isError ? (
+            <QueryError error={error} onRetry={() => refetch()} what="your backtests" />
           ) : !data || data.items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
               <Inbox className="h-8 w-8 text-muted-foreground" />
@@ -57,13 +60,17 @@ export default function BacktestsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="w-10 p-4" />
+                    <th className="relative w-10 p-4">
+                      <span className="sr-only">Select to compare</span>
+                    </th>
                     <th className="p-4 font-medium">Name</th>
                     <th className="p-4 font-medium">Symbols</th>
-                    <th className="p-4 font-medium">Period</th>
-                    <th className="p-4 font-medium">Status</th>
-                    <th className="p-4 font-medium">Created</th>
-                    <th className="p-4" />
+                    <th className="hidden p-4 font-medium md:table-cell">Period</th>
+                    <th className="hidden p-4 font-medium sm:table-cell">Status</th>
+                    <th className="hidden p-4 font-medium lg:table-cell">Created</th>
+                    <th className="relative hidden p-4 sm:table-cell">
+                      <span className="sr-only">Open</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -74,23 +81,33 @@ export default function BacktestsPage() {
                           checked={selected.includes(backtest.id)}
                           onCheckedChange={() => toggle(backtest.id)}
                           disabled={backtest.status !== "completed"}
+                          aria-label={`Select ${backtest.name || `backtest ${backtest.id}`} to compare`}
                         />
                       </td>
-                      <td className="p-4 font-medium">{backtest.name || `Backtest #${backtest.id}`}</td>
+                      <td className="p-4 font-medium">
+                        <Link
+                          href={`/backtests/${backtest.id}`}
+                          className="underline decoration-muted-foreground/30 underline-offset-4 hover:decoration-foreground"
+                        >
+                          {backtest.name || `Backtest #${backtest.id}`}
+                        </Link>
+                      </td>
                       <td className="p-4 text-muted-foreground">
                         <span className="flex flex-wrap items-center gap-2">
                           {backtest.symbols.join(", ")}
                           <SyntheticDataBadge symbols={backtest.symbols} />
                         </span>
                       </td>
-                      <td className="p-4 text-muted-foreground">
-                        {formatDate(backtest.start_date)} – {formatDate(backtest.end_date)}
+                      <td className="hidden whitespace-nowrap p-4 text-muted-foreground md:table-cell">
+                        {formatDate(backtest.start_date)} to {formatDate(backtest.end_date)}
                       </td>
-                      <td className="p-4">
+                      <td className="hidden p-4 sm:table-cell">
                         <BacktestStatusBadge status={backtest.status} />
                       </td>
-                      <td className="p-4 text-muted-foreground">{formatDate(backtest.created_at)}</td>
-                      <td className="p-4 text-right">
+                      <td className="hidden whitespace-nowrap p-4 text-muted-foreground lg:table-cell">
+                        {formatDate(backtest.created_at)}
+                      </td>
+                      <td className="hidden p-4 text-right sm:table-cell">
                         <Button variant="ghost" size="sm" asChild>
                           <Link href={`/backtests/${backtest.id}`}>View</Link>
                         </Button>

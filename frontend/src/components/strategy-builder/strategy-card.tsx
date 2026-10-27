@@ -26,7 +26,10 @@ export function StrategyCard({ strategy, catalog }: { strategy: Strategy; catalo
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-          onClick={() => deleteStrategy.mutate(strategy.id)}
+          aria-label={`Delete strategy ${strategy.name}`}
+          onClick={() => {
+            if (confirm(`Delete the strategy "${strategy.name}"? This can't be undone.`)) deleteStrategy.mutate(strategy.id);
+          }}
         >
           <Trash2 className="h-4 w-4" />
         </Button>

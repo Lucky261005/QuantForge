@@ -19,14 +19,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </aside>
 
       <div className="flex min-h-screen flex-col px-4 py-8 sm:px-10">
-        <div className="flex items-center justify-between lg:hidden">
+        <header className="flex items-center justify-between lg:hidden">
           <Wordmark />
           <MarketClock />
-        </div>
+        </header>
         <main className="my-auto w-full max-w-md self-center py-12">{children}</main>
-        <p className="text-center text-xs text-muted-foreground lg:hidden">
+        <footer className="text-center text-xs text-muted-foreground lg:hidden">
           Research platform, not connected to any broker.
-        </p>
+        </footer>
       </div>
     </div>
   );
